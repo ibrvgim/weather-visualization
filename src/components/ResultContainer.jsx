@@ -36,7 +36,7 @@ function ResultContainer({ weather }) {
             Humidity percentage for 6 days
           </p>
 
-          <div className='ml-16'>
+          <div className='ml-9'>
             <BarChart weather={weather} />
           </div>
         </div>

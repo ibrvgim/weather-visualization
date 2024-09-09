@@ -10,6 +10,8 @@ function HomePage() {
   const input = useSelector((state) => state?.weather.input);
   const weather = useSelector((state) => state?.weather.weatherData);
 
+  console.log(weather);
+
   useEffect(() => {
     const controller = new AbortController();
     const city = input || 'weimar';

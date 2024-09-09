@@ -5,6 +5,7 @@ import FirstCityCard from '../components/FIrstCityCard';
 import SecondCityCard from '../components/SecondCityCard';
 import ThirdCityCard from '../components/ThirdCityCard';
 import ScatterPlot from '../figures/ScatterPlot';
+import ParallelCoordinates from '../figures/ParallelCoordinates';
 
 function CompareWeather() {
   const firstInput = useSelector((state) => state?.citiesWeather.firstInput);
@@ -26,7 +27,7 @@ function CompareWeather() {
         Weather in Several Cities
       </p>
 
-      <div className='grid grid-cols-3 h-[28rem] mt-8 mb-28'>
+      <div className='grid grid-cols-3 h-[28rem] mt-8 mb-24'>
         <FirstCityCard
           firstInput={firstInput}
           citiesWeatherData={citiesWeatherData}
@@ -43,11 +44,18 @@ function CompareWeather() {
         />
       </div>
 
-      <div className='flex flex-col items-center'>
+      <div className='flex flex-col items-center mb-36'>
         <p className='text-4xl font-light tracking-wider text-gray-600 mb-12'>
           Scatterplot of Temperature x Humidity for 6 days
         </p>
         <ScatterPlot citiesWeather={citiesWeatherData} />
+      </div>
+
+      <div className='flex flex-col items-center mb-14'>
+        <p className='text-4xl font-light tracking-wider text-gray-600 mb-4'>
+          Parallel Coordinates of Wind Gust for 6 days
+        </p>
+        <ParallelCoordinates citiesWeather={citiesWeatherData} />
       </div>
     </div>
   );

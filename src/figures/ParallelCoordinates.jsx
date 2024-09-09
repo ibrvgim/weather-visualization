@@ -1,91 +1,110 @@
-import { useRef, useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 
-function ParallelCoordinates({ weather }) {
-  const svgRef = useRef(null);
-
-  const color = d3.scaleOrdinal(d3.schemeCategory10);
-  const width = 750;
-  const height = 350;
+function ParallelCoordinates({ citiesWeather }) {
+  const svgRef = useRef();
 
   useEffect(() => {
-    const svg = d3.select(svgRef.current);
-    const margin = { top: 50, right: 80, bottom: 50, left: 80 };
+    const margin = { top: 50, right: 30, bottom: 50, left: 50 };
+    const width = 800 - margin.left - margin.right;
+    const height = 500 - margin.top - margin.bottom;
 
-    svg.attr('viewBox', [0, 0, width, height]);
-    svg.selectAll('*').remove();
+    const parallelData = citiesWeather.flatMap((cityData) =>
+      cityData?.list?.map((item) => ({
+        cityName: cityData?.city?.name,
+        date: new Date(item.dt_txt).toLocaleDateString(),
+        windGust: Math.ceil(item.wind?.gust),
+      }))
+    );
 
-    if (!weather?.list) return;
+    d3.select(svgRef.current).selectAll('*').remove();
 
-    const weatherData = weather.list.map((item) => ({
-      minTemp: Math.ceil(item.main.temp_min - 273.15),
-      temperature: Math.ceil(item.main.temp - 273.15),
-      maxTemp: Math.ceil(item.main.temp_max - 273.15),
-    }));
+    const svg = d3
+      .select(svgRef.current)
+      .attr('width', width + margin.left + margin.right)
+      .attr('height', height + margin.top + margin.bottom)
+      .append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    const values = ['minTemp', 'temperature', 'maxTemp'];
-    const labels = [
-      'Minimum Temperature (°C)',
-      'Average Temperature (°C)',
-      'Maximum Temperature (°C)',
-    ];
+    // Extract the unique cities
+    const cities = [...new Set(parallelData.map((d) => d?.cityName))];
+    const xScale = d3.scalePoint().domain(cities).range([0, width]);
 
-    const scales = new Map();
-    values.forEach((attr) => {
-      scales.set(
-        attr,
-        d3
-          .scaleLinear()
-          .domain(d3.extent(weatherData, (d) => d[attr]))
-          .range([height - margin.bottom, margin.top])
-      );
+    const yScale = d3
+      .scaleLinear()
+      .domain([0, d3.max(parallelData, (d) => d?.windGust)])
+      .range([height, 0]);
+
+    const groupedData = d3.group(parallelData, (d) => d?.date);
+
+    const color = d3
+      .scaleOrdinal(d3.schemeCategory10)
+      .domain([...groupedData.keys()]);
+
+    // Draw axes for each city
+    cities.forEach((city) => {
+      svg
+        .append('g')
+        .attr('transform', `translate(${xScale(city)},0)`)
+        .call(
+          d3
+            .axisLeft(yScale)
+            .tickFormat((d) => `${d} km/h`)
+            .ticks(6)
+        )
+        .selectAll('text')
+        .style('font-size', '12px');
+
+      svg
+        .append('text')
+        .attr('transform', `translate(${xScale(city)},${height + margin.top})`)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '16px')
+        .text(city)
+        .style('fill', 'black');
     });
 
-    const xScale = d3
-      .scalePoint()
-      .domain(values)
-      .range([margin.left, width - margin.right]);
-
-    const axes = svg
-      .selectAll('g.axis')
-      .data(values)
-      .join('g')
-      .attr('transform', (d) => `translate(${xScale(d)},0)`)
-      .style('font-size', '11px')
-      .each(function (d) {
-        d3.select(this).call(d3.axisLeft(scales.get(d)));
-      });
-
-    axes
-      .append('text')
-      .attr('y', margin.top - 30)
-      .attr('text-anchor', 'middle')
-      .attr('fill', 'black')
-      .attr('font-weight', '700')
-      .style('font-size', '11px')
-      .text((_, i) => labels[i]);
-
-    const line = d3
+    const linePath = d3
       .line()
-      .defined((d) => !isNaN(d[1]))
-      .x((d) => xScale(d[0]))
-      .y((d) => scales.get(d[0])(d[1]));
+      .x((d) => xScale(d?.cityName))
+      .y((d) => yScale(d?.windGust));
 
-    svg
-      .selectAll('polyline')
-      .data(weatherData)
-      .join('path')
-      .attr('d', (d) => line(values.map((attr) => [attr, d[attr]])))
-      .attr('stroke', (d) => color(d[values]))
-      .attr('stroke-width', 0.5)
-      .attr('fill', 'none');
-  }, [weather, color, width, height]);
+    const tooltip = d3
+      .select('body')
+      .append('div')
+      .attr('class', 'tooltip')
+      .style('position', 'absolute')
+      .style('background', 'lightsteelblue')
+      .style('padding', '5px')
+      .style('border-radius', '5px')
+      .style('opacity', 0);
 
-  return (
-    <>
-      <svg ref={svgRef}></svg>
-    </>
-  );
+    // Draw the lines
+    groupedData.forEach((values, date) => {
+      svg
+        .append('path')
+        .datum(values)
+        .attr('d', linePath)
+        .attr('fill', 'none')
+        .attr('stroke', color(date))
+        .attr('stroke-width', 2.5)
+        .attr('opacity', 0.7)
+        .on('mouseover', function (event) {
+          d3.select(this).attr('stroke-width', 4).attr('opacity', 1);
+          tooltip.transition().duration(200).style('opacity', 0.9);
+          tooltip
+            .html(`Date: ${date}`)
+            .style('left', event.pageX + 5 + 'px')
+            .style('top', event.pageY - 28 + 'px');
+        })
+        .on('mouseout', function () {
+          d3.select(this).attr('stroke-width', 2.5).attr('opacity', 0.7);
+          tooltip.transition().duration(500).style('opacity', 0);
+        });
+    });
+  }, [citiesWeather]);
+
+  return <svg ref={svgRef}></svg>;
 }
 
 export default ParallelCoordinates;

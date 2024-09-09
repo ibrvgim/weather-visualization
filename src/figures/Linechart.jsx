@@ -116,7 +116,7 @@ function LineChart({ weather }) {
       .attr('fill', color(0))
       .attr('x', width - margin.right + 10)
       .attr('y', scaleY(weatherData[weatherData.length - 1].temperature))
-      .attr('dy', '1em')
+      .attr('dy', '-1em')
       .attr('text-anchor', 'start')
       .text('Real Temperature (°C)');
 
@@ -125,7 +125,7 @@ function LineChart({ weather }) {
       .attr('fill', color(1))
       .attr('x', width - margin.right + 10)
       .attr('y', scaleY(weatherData[weatherData.length - 1].feels))
-      .attr('dy', '-1em')
+      .attr('dy', '1em')
       .attr('text-anchor', 'start')
       .text('Feeling Temperature (°C)');
 
