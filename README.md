@@ -1,1 +1,2 @@
 # Weather Visualization
+Developed an interactive weather visualization using JavaScript and the D3.js library as a part of Universuty Course Project. The project visualizes various weather data, providing dynamic and insightful representations of temperature, precipitation, humidity, and other key metrics. Through intuitive charts and graphs, users can explore trends and patterns in weather conditions, enhancing their understanding of climate data.
